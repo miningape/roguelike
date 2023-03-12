@@ -1,6 +1,0 @@
-list = some thing else
-
-
-exe -> main.cpp {
-    clang++
-}
