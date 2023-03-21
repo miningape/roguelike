@@ -1,0 +1,100 @@
+// Const by default
+list = [1, "two", "3"]
+json = {
+    key: "value",
+    key2: ["array", "value"]
+}
+
+// Mutable
+mut num = 0
+
+// Datatypes, default assignment
+num: int    // num = 0
+
+// ":" can/should be thought of as "extends"
+
+// Functions
+func = (arg1, arg2, arg3): rtn_type => ...
+
+// Function with more than 1 expression, implicit / detected return type
+func = (arg1, arg2, arg3) => {
+    ...
+    return arg1
+}
+
+// New datatypes
+person =: {
+    name: string,
+    hobbies: string[]
+}
+
+// Datatype from other values, function-to-data (same name as datatype but = function)
+person = () => ({   // Default constructor now, used on x: person
+    name: "No name",
+    hobbies: []
+})
+person = (name: string) => ({
+    name,
+    hobbies: []
+})
+person = reflect((node: reflect) => {
+    match node.type on
+        | reflect.assignment -> { name: node.identifier, hobbies: [] }
+        | -> person()
+})
+
+// Methods on data type
+(person p) getName = () => p.name
+kyle: person
+kyle.getName // "kyle"
+
+// Datatype from array
+player =: [string, int, int]
+
+// Calling function, making datatype
+val = func(1, 2, 3)
+kyle: person // = person()
+kyle = person("kyle")
+
+// Control flow
+match x on
+    | .. -> ..
+    | -> ..
+
+mut running = true
+while running {
+    running = false
+}
+
+// Working with arrays
+list.map((elem, i) => "new value")
+[0 .. 10] // = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+[0 .. 10 | 2] // = [0, 2, 4, 6, 8]
+
+// Generics
+Cached =: <T: any> [T, bool]
+
+// List of data types
+// Basic Datatype list: number ( int | float ), string, boolean (= number{0, 1}), null
+// Datatype modifications: A | B, A & B, (and [] but its complicated)
+// Literal datatypes: "A" | "B"
+// Array / Tuple types:
+//      1. A[], (A | B)[], array / tuple of any length with same type elems
+//      2. [A, B, ..., C], array / tuple of exact length with same type as position
+// Structs:
+//      {
+//          name: <type>,
+//          name2: { ... }
+//      }
+// Functions: (A, B, C) => D // (int, string) => bool
+// Interfaces: structs but for methods
+// {
+//     fnName: (T) => A
+// }
+// Generics: <T: {type}> {type using T}
+// Complicated types (built in generics with language features):
+//      Pointer<type>, x = *int(23) // x = *23
+//      Promise<type>
+// 
+// Thats all!
+
