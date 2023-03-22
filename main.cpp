@@ -34,33 +34,60 @@ class Roguelike : public Engine {
 			7, 2
 		);
 		singleton<entt::registry>();
-		inject_singleton<MapGenerationFactory<std::string>>( std::vector({
-			MapGenerationFactory<std::string>::Factories::WaveFunctionCollapse
+		inject_singleton<MapFactory<std::string>>( std::vector({
+			MapFactory<std::string>::Factories::WaveFunctionCollapse
 		}) );
 
-		std::map<std::string, MapGenerationFactory<std::string>::WaveFunctionCollapse::AdjacencyInfo> adjacency = {
-				{"wall_basic", {
-					// .filename = "wall_tiles",
-					// .position = {1, 1},
-					.north = {"wall_basic"},
-					.east = {"floor_basic"},
-					.south = {"wall_basic"},
-					.west = {"floor_basic"},
-
+		std::map<std::string, MapFactory<std::string>::WaveFunctionCollapse::AdjacencyInfo> adjacency = {
+				{"wall_east_west", {
+					.north = { "floor_basic" },
+					.east = { "wall_east_west", "wall_east_south", "wall_north_east", "wall_west_south", "wall_north_west" },
+					.south = { "floor_basic" },
+					.west = { "wall_east_west", "wall_east_south", "wall_north_east", "wall_west_south", "wall_north_west"  }
+				}},
+				{"wall_north_south", {
+					.north = { "wall_north_south", "wall_east_south", "wall_north_west", "wall_north_east", "wall_west_south" },
+					.east = { "floor_basic" },
+					.south = { "wall_north_south", "wall_east_south", "wall_north_west", "wall_north_east", "wall_east_south" },
+					.west = { "floor_basic"}
+				}},
+				{"wall_east_south", {
+					.north = { "floor_basic" },
+					.east = { "wall_east_west", "wall_west_south", "wall_north_west" },
+					.south = { "wall_north_south", "wall_north_east", "wall_north_west" },
+					.west = { "floor_basic" }
+				}},
+				{"wall_west_south", {
+					.north = { "floor_basic" },
+					.east = { "floor_basic" },
+					.south = { "wall_north_south", "wall_north_east", "wall_north_west" },
+					.west = { "wall_east_west", "wall_east_south", "wall_north_east" },
+				}},
+				{"wall_north_east", {
+					.north = { "wall_north_south", "wall_east_south", "wall_west_south" },
+					.east = { "wall_east_west", "wall_north_west", "wall_west_south" },
+					.south = { "floor_basic" },
+					.west = { "floor_basic" },
+				}},
+				{"wall_north_west", {
+					.north = { "wall_north_south", "wall_west_south", "wall_east_south" },
+					.east = { "floor_basic" },
+					.south = { "floor_basic" },
+					.west = { "wall_east_west", "wall_east_south", "wall_north_east" }
 				}},
 				{"floor_basic", {
 					// .filename = "floor_tiles",
 					// .position = {0, 0},
-					.north = {"wall_basic"},
-					.east = {"wall_basic"},
-					.south = {"wall_basic"},
-					.west = {"wall_basic"},
+					.north = {"floor_basic", "wall_east_west", "wall_north_south", "wall_east_south", "wall_west_south", "wall_north_east", "wall_north_west"},
+					.east = {"floor_basic", "wall_east_west", "wall_north_south", "wall_east_south", "wall_west_south", "wall_north_east", "wall_north_west"},
+					.south = {"floor_basic", "wall_east_west", "wall_north_south", "wall_east_south", "wall_west_south", "wall_north_east", "wall_north_west"},
+					.west = {"floor_basic", "wall_east_west", "wall_north_south", "wall_east_south", "wall_west_south", "wall_north_east", "wall_north_west"},
 				}}
 			};
 
-		auto mapDefinition = get<MapGenerationFactory<std::string>::WaveFunctionCollapse>()->generate(
+		auto mapDefinition = get<MapFactory<std::string>::WaveFunctionCollapse>()->generate(
 			adjacency,
-			7, 7
+			8, 8
 		);
 
 		mapDefinition.map<entt::entity>([this]( std::string tile, int x, int y ){
@@ -69,13 +96,23 @@ class Roguelike : public Engine {
 
 			if (tile == "floor_basic") {
 				registry->emplace<RenderableComponent>(entity, "floor_tiles", std::pair<int, int>({ 0, 0 }), x, y);
-			} else {
+			} else if (tile == "wall_east_west") {
 				registry->emplace<RenderableComponent>(entity, "wall_tiles", std::pair<int, int>({ 2, 1 }), x, y);
+			} else if (tile == "wall_north_south") {
+				registry->emplace<RenderableComponent>(entity, "wall_tiles", std::pair<int, int>({ 1, 2 }), x, y);
+			} else if (tile == "wall_east_south") {
+				registry->emplace<RenderableComponent>(entity, "wall_tiles", std::pair<int, int>({ 1, 1 }), x, y);
+			} else if (tile == "wall_west_south") {
+				registry->emplace<RenderableComponent>(entity, "wall_tiles", std::pair<int, int>({ 3, 1 }), x, y);
+			} else if (tile == "wall_north_east") {
+				registry->emplace<RenderableComponent>(entity, "wall_tiles", std::pair<int, int>({ 1, 3 }), x, y);
+			} else if (tile == "wall_north_west") {
+				registry->emplace<RenderableComponent>(entity, "wall_tiles", std::pair<int, int>({ 3, 3 }), x, y);
 			}
 
 			return entity;
 		});
-	}
+	}	
 
 	public:
 	void onEvent(SDL_Event e) override {

@@ -5,7 +5,7 @@
 #include <set>
 
 template<class T>
-class MapGenerationFactory<T>::WaveFunctionCollapse {
+class MapFactory<T>::WaveFunctionCollapse {
 	public:
 	struct AdjacencyInfo {
 		std::set<T> north;
@@ -64,6 +64,7 @@ class MapGenerationFactory<T>::WaveFunctionCollapse {
 	void collapseAt(int x, int y) {
 		auto possibilities = map[x][y];
 		auto choice = *select_randomly(possibilities.begin(), possibilities.end());
+		std::cout << choice << std::endl;
 		map[x][y].clear();
 		map[x][y].insert(choice);
 	}
@@ -90,22 +91,56 @@ class MapGenerationFactory<T>::WaveFunctionCollapse {
 		auto currentPossibilities = map[pos.first][pos.second];
 		std::set<std::string> adjacentPossibilities;
 
+		bool firstIteration = true;
 		for ( auto possibility : currentPossibilities ) {
 			auto allowedAdjacentPossibilities = getAdjacentPossibilities(possibility, dir);
-			if (adjacentPossibilities.size() == 0) {
+			if (firstIteration) {
 				adjacentPossibilities = allowedAdjacentPossibilities;
+				firstIteration = false;
 			}
 
-			std::set<std::string> intersection;
-			std::set_intersection( 
+			std::set<std::string> allPossibilities;
+			std::set_union( 
 				allowedAdjacentPossibilities.begin(), allowedAdjacentPossibilities.end(),
 				adjacentPossibilities.begin(), adjacentPossibilities.end(),
-				std::inserter(intersection, intersection.begin())
+				std::inserter(allPossibilities, allPossibilities.begin())
 			);
-			adjacentPossibilities = intersection;
+			adjacentPossibilities = allPossibilities;
 		}
 
-		return adjacentPossibilities;
+		// Also get the constraint in the other direction, i.e. pos + dir, -dir
+		auto oppositeDir = getOppositeDirection(dir);
+		std::set<T> allowedPossibilities;
+		for ( auto possibility : adjacentPossibilities ) {
+			auto allowedAdjacentPossibilities = getAdjacentPossibilities(possibility, oppositeDir);
+
+			std::set<T> intersection;
+			std::set_intersection( 
+				allowedAdjacentPossibilities.begin(), allowedAdjacentPossibilities.end(),
+				currentPossibilities.begin(), currentPossibilities.end(),
+				std::inserter(intersection, intersection.begin())
+			);
+
+			if (intersection.size() > 0) {
+				allowedPossibilities.emplace(possibility);
+				continue;
+			}
+		}
+
+		return allowedPossibilities;
+	}
+
+	Direction getOppositeDirection(Direction dir) {
+		switch (dir) {
+			case NORTH:
+				return SOUTH;
+			case EAST:
+				return WEST;
+			case SOUTH:
+				return NORTH;
+			case WEST:
+				return EAST;
+		}
 	}
 
 	std::pair<int, int> directionToVector(Direction dir) {
@@ -157,12 +192,24 @@ class MapGenerationFactory<T>::WaveFunctionCollapse {
 			for (auto dir : validAdjacentDirections(pos)) {
 				std::pair<int, int> adjacentCell = nextCellInDir(pos, dir);
 				auto adjacentCellCurrentPossibilities = map[adjacentCell.first][adjacentCell.second];
+				auto adjacentCellAllowedPossibilities = getAllowedPossibilities(pos, dir);
 
 				if (adjacentCellCurrentPossibilities.size() == 1) {
+					auto cellValue = *(adjacentCellCurrentPossibilities.begin());
+					auto cellExists = adjacentCellAllowedPossibilities.find(cellValue);
+					if (cellExists == adjacentCellAllowedPossibilities.end()) {
+						print();
+						for (auto v : adjacentCellAllowedPossibilities) {
+							std::cout << v << ", ";
+						}
+						std::cout << std::endl;
+						
+						std::cout << pos.first << "," << pos.second << " , " << adjacentCell.first << "," << adjacentCell.second << std::endl;
+						throw std::runtime_error("Cannot change cell value");
+					}
 					continue;
 				}
 
-				auto adjacentCellAllowedPossibilities = getAllowedPossibilities(pos, dir);
 				std::set<std::string> adjacentCellNewPosibilities;
 				std::set_intersection(
 					adjacentCellCurrentPossibilities.begin(), adjacentCellCurrentPossibilities.end(),
@@ -178,6 +225,11 @@ class MapGenerationFactory<T>::WaveFunctionCollapse {
 				std::set_difference(
 					adjacentCellCurrentPossibilities.begin(), adjacentCellCurrentPossibilities.end(),
 					adjacentCellNewPosibilities.begin(), adjacentCellNewPosibilities.end(), 
+					std::inserter(diff, diff.begin())
+				);
+				std::set_difference(
+					adjacentCellNewPosibilities.begin(), adjacentCellNewPosibilities.end(),
+					adjacentCellCurrentPossibilities.begin(), adjacentCellCurrentPossibilities.end(), 
 					std::inserter(diff, diff.begin())
 				);
 
@@ -221,11 +273,10 @@ class MapGenerationFactory<T>::WaveFunctionCollapse {
 
 		while (collapsable()) {
 			auto [x, y] = cellWithLeastEntropy();
+			std::cout << "Least entropy, x: " << x << ", y: " << y << std::endl;
 			collapseAt(x, y);
 			propegateCollapseAt(x, y);
 		}
-
-
 
 		std::vector<std::vector<T>> tMap;
 		for ( auto col : map ) {

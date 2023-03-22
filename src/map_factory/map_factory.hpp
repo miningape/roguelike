@@ -39,7 +39,7 @@ class Map {
 };
 
 template<class T>
-class MapGenerationFactory {
+class MapFactory {
 	public:
 	class Factories {
 		public:
@@ -48,7 +48,7 @@ class MapGenerationFactory {
 		};
 	};
 
-	MapGenerationFactory(std::vector<typename Factories::ALLOWED> injections, Engine* engine) {
+	MapFactory(std::vector<typename Factories::ALLOWED> injections, Engine* engine) {
 		for (auto injection : injections) {
 			switch (injection) {
 				case Factories::WaveFunctionCollapse:
